@@ -1,0 +1,7 @@
+/node_modules
+/dist
+/.angular
+*.log
+.DS_Store
+
+# Nunca subir claves reales; environment.ts de ejemplo queda sin datos sensibles reales
