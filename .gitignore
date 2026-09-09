@@ -1,0 +1,5 @@
+backend/src/main/resources/firebase-service-account.json
+backend/src/main/resources/firebase-service-account.json.json
+backend/bin/
+frontend/node_modules/
+frontend/dist/
