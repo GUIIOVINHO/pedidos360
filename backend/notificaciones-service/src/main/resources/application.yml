@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: notificaciones-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL:false}
+    listener:
+      simple:
+        acknowledge-mode: manual      # ACK explicito en cada consumidor
+        prefetch: 1
+        default-requeue-rejected: false
+
+server:
+  port: 8081
+
+app:
+  # --- Nombres de RabbitMQ centralizados: NINGUN nombre se escribe en el codigo Java ---
+  rabbit:
+    exchanges:
+      pedidos: pedidos.exchange
+      dlx: pedidos.dlx
+    queues:
+      notificaciones: notificaciones.queue
+      notificaciones-dlq: notificaciones.dlq
+    routing-keys:
+      pedido-creado: pedido.creado
+      pedido-actualizado: pedido.actualizado
+      notificaciones-dead: notificaciones.dead
+    retry:
+      max-retries: 3
+      backoff-ms: 1000
+    # true: un listener lee la DLQ y registra cada mensaje fallido en el log (y lo da por leido).
+    # false: los mensajes se quedan en la DLQ para inspeccionarlos en el panel de RabbitMQ.
+    dlq-consumer-enabled: true

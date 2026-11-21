@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: rabbit-admin-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL:false}
+  jackson:
+    mapper:
+      accept-case-insensitive-enums: true   # "topic" y "TOPIC" son validos
+
+server:
+  port: 8083
+
+firebase:
+  credentials:
+    path: ${FIREBASE_CREDENTIALS_PATH:../firebase-service-account.json}

@@ -1,19 +1,21 @@
+# Libera los puertos de todos los servicios (backend, frontend).
+# Si levantaste RabbitMQ con Docker, para detenerlo usa: docker compose down
 $ErrorActionPreference = "Stop"
 
-$ports = @(8080, 4200)
+$ports = @(8080, 8081, 8082, 8083, 4200)
 
 foreach ($port in $ports) {
     $processes = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty OwningProcess -Unique
 
-    foreach ($pid in $processes) {
+    foreach ($processId in $processes) {
         try {
-            Stop-Process -Id $pid -Force
-            Write-Host "Puerto $port liberado. Proceso detenido: $pid"
+            Stop-Process -Id $processId -Force
+            Write-Host "Puerto $port liberado. Proceso detenido: $processId"
         } catch {
-            Write-Host "No se pudo detener el proceso $pid del puerto $port"
+            Write-Host "No se pudo detener el proceso $processId del puerto $port"
         }
     }
 }
 
-Write-Host "Puertos 8080 y 4200 liberados."
+Write-Host "Puertos 8080, 8081, 8082, 8083 y 4200 liberados."

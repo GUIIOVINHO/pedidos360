@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: tickets-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL:false}
+    listener:
+      simple:
+        acknowledge-mode: manual      # ACK explicito en cada consumidor
+        prefetch: 1
+        default-requeue-rejected: false
+
+server:
+  port: 8082
+
+app:
+  tickets:
+    output-dir: ./tickets            # carpeta donde se generan los tickets (.txt)
+  # --- Nombres de RabbitMQ centralizados: NINGUN nombre se escribe en el codigo Java ---
+  rabbit:
+    exchanges:
+      pedidos: pedidos.exchange
+      dlx: pedidos.dlx
+    queues:
+      tickets: tickets.queue
+      tickets-dlq: tickets.dlq
+    routing-keys:
+      pedido-creado: pedido.creado
+      tickets-dead: tickets.dead
+    retry:
+      max-retries: 3
+      backoff-ms: 1000
+    dlq-consumer-enabled: true

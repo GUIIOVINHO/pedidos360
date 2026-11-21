@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: pedidos-service
+  datasource:
+    url: jdbc:h2:mem:pedidos360
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  # Conexion a RabbitMQ. Por defecto apunta al contenedor local (docker-compose).
+  # Para usar un broker en la nube (ej. CloudAMQP) basta definir las variables de entorno.
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: ${RABBITMQ_SSL:false}
+
+server:
+  port: 8080
+
+firebase:
+  credentials:
+    path: ${FIREBASE_CREDENTIALS_PATH:../firebase-service-account.json}
+
+app:
+  cors:
+    allowed-origin: http://localhost:4200
+  # --- Nombres de RabbitMQ centralizados: NINGUN nombre se escribe en el codigo Java ---
+  rabbit:
+    exchanges:
+      pedidos: pedidos.exchange
+    routing-keys:
+      pedido-creado: pedido.creado
+      pedido-actualizado: pedido.actualizado
