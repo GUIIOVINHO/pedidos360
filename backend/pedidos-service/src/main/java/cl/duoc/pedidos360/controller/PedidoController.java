@@ -3,6 +3,7 @@ package cl.duoc.pedidos360.controller;
 import cl.duoc.pedidos360.dto.PedidoRequest;
 import cl.duoc.pedidos360.entity.Pedido;
 import cl.duoc.pedidos360.messaging.PedidoEventPublisher;
+import cl.duoc.pedidos360.messaging.PedidoKafkaPublisher;
 import cl.duoc.pedidos360.repository.PedidoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -23,10 +24,13 @@ public class PedidoController {
 
     private final PedidoRepository pedidoRepository;
     private final PedidoEventPublisher eventPublisher;
+    private final PedidoKafkaPublisher kafkaPublisher;
 
-    public PedidoController(PedidoRepository pedidoRepository, PedidoEventPublisher eventPublisher) {
+    public PedidoController(PedidoRepository pedidoRepository, PedidoEventPublisher eventPublisher,
+                            PedidoKafkaPublisher kafkaPublisher) {
         this.pedidoRepository = pedidoRepository;
         this.eventPublisher = eventPublisher;
+        this.kafkaPublisher = kafkaPublisher;
     }
 
     @GetMapping
@@ -53,7 +57,8 @@ public class PedidoController {
         pedido.setCreadoPor(uid != null ? uid.toString() : "desconocido");
 
         Pedido guardado = pedidoRepository.save(pedido);
-        eventPublisher.publicarPedidoCreado(guardado);
+        eventPublisher.publicarPedidoCreado(guardado);   // RabbitMQ: notificaciones y tickets
+        kafkaPublisher.publicarPedidoCreado(guardado);   // Kafka: streaming y metricas
         return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 
@@ -69,7 +74,8 @@ public class PedidoController {
                         pedido.setEstado(request.getEstado());
                     }
                     Pedido actualizado = pedidoRepository.save(pedido);
-                    eventPublisher.publicarPedidoActualizado(actualizado);
+                    eventPublisher.publicarPedidoActualizado(actualizado);   // RabbitMQ
+                    kafkaPublisher.publicarPedidoActualizado(actualizado);   // Kafka
                     return ResponseEntity.ok(actualizado);
                 })
                 .orElse(ResponseEntity.notFound().build());

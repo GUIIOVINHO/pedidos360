@@ -1,8 +1,11 @@
-# Libera los puertos de todos los servicios (backend, frontend).
-# Si levantaste RabbitMQ con Docker, para detenerlo usa: docker compose down
+# Libera los puertos de todos los servicios (backend y frontend).
+# Para detener tambien los contenedores de Docker:
+#   docker compose -f docker-compose.yml down
+#   docker compose -f docker/docker-compose.kafka-ui.yml down
+#   docker compose -f docker/docker-compose.kafka.yml down
 $ErrorActionPreference = "Stop"
 
-$ports = @(8080, 8081, 8082, 8083, 4200)
+$ports = @(8080, 8081, 8082, 8083, 8084, 8085, 4200)
 
 foreach ($port in $ports) {
     $processes = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
@@ -18,4 +21,4 @@ foreach ($port in $ports) {
     }
 }
 
-Write-Host "Puertos 8080, 8081, 8082, 8083 y 4200 liberados."
+Write-Host "Puertos 8080 a 8085 y 4200 liberados."

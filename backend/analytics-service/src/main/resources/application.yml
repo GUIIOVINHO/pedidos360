@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: analytics-service
+  # ---------------- Cliente Kafka (conexion al cluster de docker/docker-compose.kafka.yml) ----------------
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    producer:
+      client-id: analytics-service-producer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+        max.block.ms: 3000
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: analytics-metricas      # consumer group: sus instancias se reparten las particiones
+      client-id: analytics-service-consumer
+      auto-offset-reset: earliest       # un grupo nuevo lee el topico desde el principio
+      enable-auto-commit: false         # el offset se confirma desde el contenedor, registro a registro
+      max-poll-records: 50
+      # ErrorHandlingDeserializer: un mensaje malformado NO tumba al consumidor (va a la DLT)
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: cl.duoc.pedidos360.analytics.dto.PedidoEventoDto
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: cl.duoc.pedidos360.analytics.dto
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
+        max.poll.interval.ms: 300000
+        partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+    listener:
+      ack-mode: record
+      concurrency: 3                    # 3 hilos consumidores = 1 por particion del topico de eventos
+      missing-topics-fatal: false
+    admin:
+      modify-topic-configs: true
+
+server:
+  port: 8084
+
+firebase:
+  credentials:
+    path: ${FIREBASE_CREDENTIALS_PATH:../firebase-service-account.json}
+
+app:
+  cors:
+    allowed-origin: http://localhost:4200
+  # --- Topicos de Kafka: nombres y parametros centralizados ---
+  kafka:
+    topics:
+      eventos:                          # lo declara y es dueño pedidos-service; aqui solo se consume
+        name: pedidos.eventos
+      metricas:                         # topico de snapshots de metricas (este servicio es el dueño)
+        name: pedidos.metricas
+        partitions: 1
+        replicas: 2
+        retention-ms: -1
+        cleanup-policy: compact         # solo interesa el ultimo valor por clave ("global")
+        min-insync-replicas: 1
+      dlt:                              # dead letter topic: mensajes que no se pudieron procesar
+        name: pedidos.eventos.analytics.DLT
+        partitions: 1
+        replicas: 2
+        retention-ms: 2592000000        # 30 dias
+        cleanup-policy: delete
+        min-insync-replicas: 1
+    retry:
+      max-retries: 3
+      backoff-ms: 1000

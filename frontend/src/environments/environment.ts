@@ -3,6 +3,7 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8080/api',
+  analyticsUrl: 'http://localhost:8084/api',
   firebase: {
     apiKey: 'AIzaSyDfUbd-Uc9teZ13mQe2WTYh1BT160UKyAA',
     authDomain: 'pedidos360-f83ae.firebaseapp.com',

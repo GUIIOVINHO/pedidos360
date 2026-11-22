@@ -14,6 +14,37 @@ spring:
         acknowledge-mode: manual      # ACK explicito en cada consumidor
         prefetch: 1
         default-requeue-rejected: false
+  # ---------------- Cliente Kafka (alertas a partir de las metricas) ----------------
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    producer:                          # solo lo usa la plantilla de la DLT
+      client-id: notificaciones-service-producer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+    consumer:
+      group-id: notificaciones-alertas   # grupo distinto al de analytics: este servicio recibe TODAS las metricas
+      client-id: notificaciones-service-consumer
+      auto-offset-reset: latest          # las alertas solo interesan desde que el servicio esta activo
+      enable-auto-commit: false
+      max-poll-records: 20
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: cl.duoc.pedidos360.notificaciones.dto.MetricasPedidosDto
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: cl.duoc.pedidos360.notificaciones.dto
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 10000
+        partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+    listener:
+      ack-mode: record
+      concurrency: 1                     # el topico de metricas tiene 1 particion
+      missing-topics-fatal: false
+    admin:
+      modify-topic-configs: true
 
 server:
   port: 8081
@@ -37,3 +68,20 @@ app:
     # true: un listener lee la DLQ y registra cada mensaje fallido en el log (y lo da por leido).
     # false: los mensajes se quedan en la DLQ para inspeccionarlos en el panel de RabbitMQ.
     dlq-consumer-enabled: true
+  # --- Topicos de Kafka: nombres y parametros centralizados ---
+  kafka:
+    topics:
+      metricas:                          # lo declara y es dueño analytics-service; aqui solo se consume
+        name: pedidos.metricas
+      dlt:                               # dead letter topic de este consumidor
+        name: pedidos.metricas.notificaciones.DLT
+        partitions: 1
+        replicas: 2
+        retention-ms: 2592000000         # 30 dias
+        cleanup-policy: delete
+        min-insync-replicas: 1
+    retry:
+      max-retries: 3
+      backoff-ms: 1000
+  alertas:
+    pedidos-por-minuto: 5                # umbral de "alta demanda" (bajo a proposito para poder demostrarlo)

@@ -1,0 +1,26 @@
+# Kafka UI: panel web para administrar brokers, topicos y consumer groups.
+#   Panel:  http://localhost:8090
+#
+# Requisitos: la red compartida y el cluster Kafka deben estar levantados:
+#   docker network create pedidos360-net
+#   docker compose -f docker/docker-compose.kafka.yml up -d
+# Levantar:  docker compose -f docker/docker-compose.kafka-ui.yml up -d
+name: pedidos360-kafka-ui
+
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: pedidos360-kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pedidos360
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:29092,kafka-2:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+      JAVA_OPTS: "-Xms128m -Xmx384m"
+    networks:
+      - pedidos360-net
+
+networks:
+  pedidos360-net:
+    external: true

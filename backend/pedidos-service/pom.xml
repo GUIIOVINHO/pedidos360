@@ -47,6 +47,12 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+        <!-- Kafka: streaming de eventos de negocio -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
         <!-- Firebase Admin SDK: verifica el JWT emitido por el IDaaS -->
         <dependency>
             <groupId>com.google.firebase</groupId>

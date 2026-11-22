@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: kafka-admin-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    admin:
+      client-id: kafka-admin-service
+      properties:
+        request.timeout.ms: 8000
+        default.api.timeout.ms: 10000
+  jackson:
+    mapper:
+      accept-case-insensitive-enums: true   # "compact" y "COMPACT" son validos
+
+server:
+  port: 8085
+
+firebase:
+  credentials:
+    path: ${FIREBASE_CREDENTIALS_PATH:../firebase-service-account.json}
+
+app:
+  kafka-admin:
+    timeout-seconds: 10     # tiempo maximo de espera por cada operacion contra el cluster

@@ -9,6 +9,9 @@ import { AuthService } from '../services/auth.service';
   selector: 'app-pedidos-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styles: [`
+    .topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  `],
   template: `
     <div class="dashboard-shell">
       <div class="card dashboard-card">
@@ -17,7 +20,10 @@ import { AuthService } from '../services/auth.service';
             <h3 class="panel-title">Gestión de pedidos</h3>
             <p class="helper-text">Administra tus pedidos de forma segura</p>
           </div>
-          <button class="secondary-btn" type="button" (click)="logout()">Cerrar sesión</button>
+          <div class="topbar-actions">
+            <button class="primary-btn" type="button" (click)="verMetricas()">Métricas en vivo</button>
+            <button class="secondary-btn" type="button" (click)="logout()">Cerrar sesión</button>
+          </div>
         </div>
 
         <div class="new-order">
@@ -91,6 +97,10 @@ export class PedidosListComponent implements OnInit {
 
   eliminar(id: number) {
     this.pedidosService.eliminar(id).subscribe({ next: () => this.cargar() });
+  }
+
+  verMetricas() {
+    this.router.navigate(['/metricas']);
   }
 
   logout() {

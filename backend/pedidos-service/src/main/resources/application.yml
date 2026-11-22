@@ -2,7 +2,7 @@ spring:
   application:
     name: pedidos-service
   datasource:
-    url: jdbc:h2:mem:pedidos360
+    url: jdbc:h2:mem:pedidos360;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: ""
@@ -14,8 +14,7 @@ spring:
     console:
       enabled: true
       path: /h2-console
-  # Conexion a RabbitMQ. Por defecto apunta al contenedor local (docker-compose).
-  # Para usar un broker en la nube (ej. CloudAMQP) basta definir las variables de entorno.
+  # Conexion a RabbitMQ (colas de trabajo: notificaciones y tickets).
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -24,6 +23,24 @@ spring:
     virtual-host: ${RABBITMQ_VHOST:/}
     ssl:
       enabled: ${RABBITMQ_SSL:false}
+  # Conexion al cluster Kafka (streaming de eventos de negocio). Brokers de docker/docker-compose.kafka.yml
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093}
+    producer:
+      client-id: pedidos-service-producer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all                        # el mensaje se confirma cuando lo tienen las replicas en sincronia
+      retries: 3
+      properties:
+        enable.idempotence: true       # sin duplicados ante reintentos del productor
+        linger.ms: 5
+        max.block.ms: 3000             # si Kafka esta caido, la API NO se queda esperando
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+        spring.json.add.type.headers: false   # el consumidor usa su propio DTO (evita el problema del __TypeId__)
+    admin:
+      modify-topic-configs: true       # si el topico ya existe, sus configuraciones se ajustan a las del yml
 
 server:
   port: 8080
@@ -42,3 +59,13 @@ app:
     routing-keys:
       pedido-creado: pedido.creado
       pedido-actualizado: pedido.actualizado
+  # --- Topicos de Kafka que declara este servicio (es el dueño del topico de eventos) ---
+  kafka:
+    topics:
+      eventos:
+        name: pedidos.eventos
+        partitions: 3                  # permite hasta 3 consumidores en paralelo por grupo
+        replicas: 2                    # cada particion vive en los 2 brokers
+        retention-ms: 604800000        # 7 dias
+        cleanup-policy: delete
+        min-insync-replicas: 1
